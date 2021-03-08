@@ -7,6 +7,18 @@ output:
 
 It makes me happy to see the vaccine numbers tick up every day, and I also wanted to see how local jurisdictions are doing relative to the country.
 
+'Eld_pop_share' is the percent of the adult population that is age 65+.
+
+Dose_1_share and Dose_2_share are percentages of the adult population, and Dose_1_share_eld and Dose_2_share_eld are percentages of the 65+ population. 
+
+You can see that areas that look to be behind the national average of adult population share look more reasonable when looking at the elderly share.This makes sense as the vaccine distributions were probably (hopefully?) more in line with elderly population than total population.
+
+```{css, echo=FALSE}
+        tr:hover {
+          background-color: #ffff99;
+        }
+```
+
 ```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 
 library(tidyverse)
@@ -42,7 +54,7 @@ va_with_pop <- inner_join(va_totals, pop2, by = "FIPS")
 
 # Calculate vaccines as share of pop
 va_with_pop2 <- mutate(va_with_pop,
-                       Eld_pop_share = DP05_0024E / DP05_0001E,
+                       Eld_pop_share = DP05_0024E / DP05_0021E,
                        Eld_pop_share = scales::percent(Eld_pop_share, accuracy = 0.01),
                        Dose_1_share = Dose_1 / DP05_0021E, 
                        Dose_2_share = Dose_2 / DP05_0021E,
@@ -93,6 +105,12 @@ va_total <- va_with_pop2 %>%
          Eld_pop_share = scales::percent(Eld_pop_share, accuracy = 0.01)
          )
 
+va_total2 <- va_total %>% 
+  mutate(Locality = "VA Total",
+         Dose_1 = Total_Dose_1,
+         Dose_2 = Total_Dose_2) %>% 
+  select(-pop, -eld_pop, -Total_Dose_1, -Total_Dose_2)
+
 # Get US Vaccine totals
 us_total <- read_csv("https://raw.githubusercontent.com/youyanggu/covid19-cdc-vaccination-data/main/cdc_vaccination_trends_data.csv")
 us_total  
@@ -101,6 +119,7 @@ us_raw <- jsonlite::fromJSON("https://covid.cdc.gov/covid-data-tracker/COVIDData
 us_total <- as_tibble(us_raw[["vaccination_trends_data"]])
 current_total <- us_total[1,]
 current_total
+data_date <- as.character(us_total[1,1])
 current_total <- select(current_total, Date, Administered_Cumulative, Admin_Dose_1_Cumulative,
                         Admin_Dose_2_Cumulative)
 total_pop <- pop2 %>% 
@@ -133,11 +152,28 @@ nova_total2 <- nova_total %>%
   mutate(Locality = "NoVA Total", Dose_1 = Total_Dose_1, Dose_2 = Total_Dose_2) %>% 
   select(Locality, Eld_pop_share, Dose_1, Dose_2, Dose_1_share, Dose_2_share, Dose_1_share_eld, Dose_2_share_eld) 
   
-out1 <- rbind(current_total2, nova_total2, nova_vaccines2)
+out1 <- rbind(current_total2, va_total2, nova_total2, nova_vaccines2)
 out1 <- mutate(out1, Dose_1 = scales::comma(Dose_1),
                Dose_2 = scales::comma(Dose_2))
 
+weekly_average <- us_total %>% 
+  filter(Location == "US" & date_type == "Report") %>% 
+  arrange(desc(Date))
+weekly_average <- weekly_average[1,]
+weekly_average <- as.numeric(weekly_average$Administered_daily_change_report_7dayroll)
+weekly_average
+remaining_doses <- 2 * (total_pop[1,1] - current_total2$Dose_1) + (current_total2$Dose_1
+                                                                - current_total2$Dose_2)
+as.numeric(remaining_doses)
+days <- as.numeric(remaining_doses/weekly_average)
+end_date <- Sys.Date() + days
+
 ```
+The data are as of: **`r data_date`**.
+
+The current 7-day average doses per day is: **`r scales::comma(weekly_average)`**.
+
+At this rate, all adults could be vaccinated by: **`r end_date`**.
 
 ```{r, echo=FALSE}
 knitr::kable(out1)
