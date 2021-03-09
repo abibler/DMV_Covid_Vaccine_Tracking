@@ -168,6 +168,31 @@ as.numeric(remaining_doses)
 days <- as.numeric(remaining_doses/weekly_average)
 end_date <- Sys.Date() + days
 
+
+#Get state totals
+
+
+state_raw <- jsonlite::fromJSON("https://covid.cdc.gov/covid-data-tracker/COVIDData/getAjaxData?id=vaccination_data")
+
+state_data <- as_tibble(state_raw[["vaccination_data"]])
+
+dc_pop  <- filter(pop2, FIPS == "11001")
+dc_vaccines <- filter(state_data, Location == "DC")
+dc <- cbind(dc_pop, dc_vaccines)
+# dc2 <- dc %>% transmute(Locality = "DC", 
+#Eld_pop_share = DP05_0024E / DP05_0021E,
+#Eld_pop_share = scales::percent(Eld_pop_share, accuracy = 0.01),
+#Dose_1 = Administered_Dose1, 
+#Dose_2 = Administered_Dose2,
+#Dose_1_share = Administered_Dose1/DP05_0021E, 
+#Dose_1_share = scales::percent(Dose_1_share, accuracy = 0.01),
+#Dose_1_share_eld = Administered_Dose1/DP05_0024E, 
+#Dose_1_share_eld = scales::percent(Dose_1_share_eld, accuracy = 0.01),
+#Dose_2_share = Administered_Dose2/DP05_0021E, 
+#Dose_2_share = scales::percent(Dose_2_share, accuracy = 0.01),
+#Dose_2_share_eld = Administered_Dose2/DP05_0024E, 
+#Dose_2_share_eld = scales::percent(Dose_2_share_eld, accuracy = 0.01))
+
 ```
 The data are as of: **`r data_date`**.
 
