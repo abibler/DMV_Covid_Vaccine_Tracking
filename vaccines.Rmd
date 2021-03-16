@@ -117,7 +117,7 @@ us_total
 
 us_raw <- jsonlite::fromJSON("https://covid.cdc.gov/covid-data-tracker/COVIDData/getAjaxData?id=vaccination_trends_data")
 us_total <- as_tibble(us_raw[["vaccination_trends_data"]])
-current_total <- us_total[2,]
+current_total <- us_total[1,]
 current_total
 data_date <- as.character(current_total[1,1])
 current_total <- select(current_total, Date, Administered_Cumulative, Admin_Dose_1_Cumulative,
@@ -152,9 +152,6 @@ nova_total2 <- nova_total %>%
   mutate(Locality = "NoVA Total", Dose_1 = Total_Dose_1, Dose_2 = Total_Dose_2) %>% 
   select(Locality, Eld_pop_share, Dose_1, Dose_2, Dose_1_share, Dose_2_share, Dose_1_share_eld, Dose_2_share_eld) 
   
-out1 <- rbind(current_total2, va_total2, nova_total2, nova_vaccines2)
-out1 <- mutate(out1, Dose_1 = scales::comma(Dose_1),
-               Dose_2 = scales::comma(Dose_2))
 
 weekly_average <- us_total %>% 
   filter(Location == "US" & date_type == "Report") %>% 
@@ -177,22 +174,29 @@ state_raw <- jsonlite::fromJSON("https://covid.cdc.gov/covid-data-tracker/COVIDD
 state_data <- as_tibble(state_raw[["vaccination_data"]])
 
 dc_pop  <- filter(pop2, FIPS == "11001")
+
 dc_vaccines <- filter(state_data, Location == "DC")
 dc <- cbind(dc_pop, dc_vaccines)
-# dc2 <- dc %>% transmute(Locality = "DC", 
-#Eld_pop_share = DP05_0024E / DP05_0021E,
-#Eld_pop_share = scales::percent(Eld_pop_share, accuracy = 0.01),
-#Dose_1 = Administered_Dose1, 
-#Dose_2 = Administered_Dose2,
-#Dose_1_share = Administered_Dose1/DP05_0021E, 
-#Dose_1_share = scales::percent(Dose_1_share, accuracy = 0.01),
-#Dose_1_share_eld = Administered_Dose1/DP05_0024E, 
-#Dose_1_share_eld = scales::percent(Dose_1_share_eld, accuracy = 0.01),
-#Dose_2_share = Administered_Dose2/DP05_0021E, 
-#Dose_2_share = scales::percent(Dose_2_share, accuracy = 0.01),
-#Dose_2_share_eld = Administered_Dose2/DP05_0024E, 
-#Dose_2_share_eld = scales::percent(Dose_2_share_eld, accuracy = 0.01))
+colnames(dc)
+dc2 <- dc %>% transmute(Locality = "DC", 
+Eld_pop_share = DP05_0024E / DP05_0021E,
+Eld_pop_share = scales::percent(Eld_pop_share, accuracy = 0.01),
+Dose_1 = Administered_Dose1_Recip, 
+Dose_2 = Administered_Dose2_Recip,
+Dose_1_share = Administered_Dose1_Recip/DP05_0021E, 
+Dose_1_share = scales::percent(Dose_1_share, accuracy = 0.01),
+Dose_1_share_eld = Administered_Dose1_Recip/DP05_0024E, 
+Dose_1_share_eld = scales::percent(Dose_1_share_eld, accuracy = 0.01),
+Dose_2_share = Administered_Dose2_Recip/DP05_0021E, 
+Dose_2_share = scales::percent(Dose_2_share, accuracy = 0.01),
+Dose_2_share_eld = Administered_Dose2_Recip/DP05_0024E, 
+Dose_2_share_eld = scales::percent(Dose_2_share_eld, accuracy = 0.01))
 
+out1 <- rbind(current_total2, dc2, va_total2, nova_total2, nova_vaccines2)
+out1 <- mutate(out1, Dose_1 = scales::comma(Dose_1),
+               Dose_2 = scales::comma(Dose_2))
+
+out1
 ```
 The data are as of: **`r data_date`**.
 
