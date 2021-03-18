@@ -117,7 +117,7 @@ us_total
 
 us_raw <- jsonlite::fromJSON("https://covid.cdc.gov/covid-data-tracker/COVIDData/getAjaxData?id=vaccination_trends_data")
 us_total <- as_tibble(us_raw[["vaccination_trends_data"]])
-current_total <- us_total[1,]
+current_total <- us_total[2,]
 current_total
 data_date <- as.character(current_total[1,1])
 current_total <- select(current_total, Date, Administered_Cumulative, Admin_Dose_1_Cumulative,
